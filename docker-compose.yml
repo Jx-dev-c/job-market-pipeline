@@ -1,0 +1,117 @@
+x-airflow-common: &airflow-common
+  build:
+    context: .
+    dockerfile: Dockerfile.airflow
+  image: job-market-airflow
+  env_file: .env
+  user: "${AIRFLOW_UID:-50000}:0"
+  environment:
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_AIRFLOW_USER:-airflow}:${POSTGRES_AIRFLOW_PASSWORD:-airflow_local_pw}@postgres:5432/${POSTGRES_AIRFLOW_DB:-airflow}
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ./plugins:/opt/airflow/plugins
+    - ./dbt/profiles:/home/airflow/.dbt
+    - ./data:/data
+    - ./extract:/opt/airflow/extract
+    - ./dbt/job_market:/opt/airflow/dbt/job_market
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: job-market-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_AIRFLOW_DB:-airflow}
+      POSTGRES_USER: ${POSTGRES_AIRFLOW_USER:-airflow}
+      POSTGRES_PASSWORD: ${POSTGRES_AIRFLOW_PASSWORD:-airflow_local_pw}
+      POSTGRES_JOB_MARKET_DB: ${POSTGRES_JOB_MARKET_DB:-job_market}
+      POSTGRES_JOB_MARKET_USER: ${POSTGRES_JOB_MARKET_USER:-job_market}
+      POSTGRES_JOB_MARKET_PASSWORD: ${POSTGRES_JOB_MARKET_PASSWORD:-job_market_local_pw}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_AIRFLOW_USER:-airflow}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  extract:
+    build:
+      context: .
+      dockerfile: Dockerfile.extract
+    image: job-market-extract
+    env_file: .env
+    user: "${AIRFLOW_UID:-50000}:0"
+    volumes:
+      - ./data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  dbt:
+    build:
+      context: .
+      dockerfile: Dockerfile.dbt
+    image: job-market-dbt
+    env_file: .env
+    user: "${AIRFLOW_UID:-50000}:0"
+    # container roda como UID 50000, então ~/.dbt não pode ser /root/.dbt.
+    # aponta HOME pra um dir acessível; dbt acha o profile em $HOME/.dbt.
+    environment:
+      HOME: /opt/dbt-home
+    volumes:
+      - ./dbt/profiles:/opt/dbt-home/.dbt
+      - ./dbt/job_market:/app/job_market
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - "airflow db migrate && (airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true)"
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8080:8080"
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  metabase:
+    image: metabase/metabase:v0.51.4
+    container_name: job-market-metabase
+    ports:
+      - "3000:3000"
+    volumes:
+      - metabase_data:/metabase-data
+    environment:
+      MB_DB_FILE: /metabase-data/metabase.db
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pg_data:
+  metabase_data:

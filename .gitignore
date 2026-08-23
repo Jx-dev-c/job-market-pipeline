@@ -1,0 +1,33 @@
+# secrets
+.env
+keys/*.json
+dbt/profiles/*
+!dbt/profiles/profiles.yml.example
+
+# dados locais gerados pela extração
+data/
+
+# Airflow
+logs/
+plugins/*
+!plugins/.gitkeep
+airflow.cfg
+airflow.db
+standalone_admin_password.txt
+
+# dbt
+dbt/job_market/target/
+dbt/job_market/dbt_packages/
+dbt/job_market/logs/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

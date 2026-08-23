@@ -1,0 +1,14 @@
+.git
+.env
+keys/
+logs/
+data/
+dbt/profiles/profiles.yml
+__pycache__/
+*.pyc
+.venv/
+venv/
+tests/
+docs/
+*.md
+.github/

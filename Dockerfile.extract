@@ -1,0 +1,10 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements-extract.txt .
+RUN pip install --no-cache-dir -r requirements-extract.txt
+
+COPY extract/ ./extract
+
+ENTRYPOINT ["python", "-m", "extract.run_extraction"]
