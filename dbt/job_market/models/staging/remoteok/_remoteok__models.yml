@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: stg_remoteok__jobs
+    columns:
+      - name: job_key
+        # não é unique em staging (uma linha por dia por vaga); ver stg_adzuna__jobs
+        tests:
+          - not_null
+      - name: external_id
+        tests:
+          - not_null
+      - name: title
+        tests:
+          - not_null
+      - name: url
+        tests:
+          - not_null

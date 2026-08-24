@@ -1,0 +1,30 @@
+name: "job_market"
+version: "1.0.0"
+config-version: 2
+
+profile: "job_market"
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+seeds:
+  job_market:
+    +schema: job_market_staging
+
+models:
+  job_market:
+    staging:
+      +materialized: view
+      +schema: job_market_staging
+    intermediate:
+      +materialized: incremental
+      +schema: job_market_intermediate
+    marts:
+      +materialized: table
+      +schema: job_market_marts

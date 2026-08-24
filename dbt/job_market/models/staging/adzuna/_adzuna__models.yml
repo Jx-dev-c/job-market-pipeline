@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: stg_adzuna__jobs
+    columns:
+      - name: job_key
+        # sem unique de propósito: staging tem uma linha por (fonte, external_id,
+        # ingestion_date), então a mesma vaga reaparece em dias diferentes.
+        # job_key só fica único a partir de int_jobs_deduped.
+        tests:
+          - not_null
+      - name: external_id
+        tests:
+          - not_null
+      - name: title
+        tests:
+          - not_null
+      - name: url
+        tests:
+          - not_null

@@ -1,0 +1,53 @@
+version: 2
+
+models:
+  - name: int_jobs_deduped
+    columns:
+      - name: job_key
+        tests:
+          - not_null
+          - unique
+      - name: first_seen
+        tests:
+          - not_null
+      - name: last_seen
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "salary_min <= salary_max"
+
+  - name: int_jobs_enriched
+    columns:
+      - name: job_key
+        tests:
+          - not_null
+          - unique
+      - name: seniority_level
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["junior", "pleno", "senior", "staff", "nao_identificado"]
+      - name: work_mode
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["remoto", "hibrido", "presencial", "nao_identificado"]
+
+  - name: int_jobs_with_skills
+    columns:
+      - name: job_key
+        tests:
+          - not_null
+      - name: skill_name
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - job_key
+              - skill_name

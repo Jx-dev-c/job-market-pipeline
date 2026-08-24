@@ -1,0 +1,63 @@
+version: 2
+
+models:
+  - name: dim_company
+    columns:
+      - name: company_key
+        tests:
+          - not_null
+          - unique
+      - name: company_name
+        tests:
+          - not_null
+
+  - name: dim_skill
+    columns:
+      - name: skill_key
+        tests:
+          - not_null
+          - unique
+      - name: skill_name
+        tests:
+          - not_null
+          - unique
+
+  - name: fct_job_postings
+    columns:
+      - name: job_key
+        tests:
+          - not_null
+          - unique
+      - name: company_key
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_company')
+                field: company_key
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "salary_min <= salary_max"
+
+  - name: fct_job_skills
+    columns:
+      - name: job_key
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_job_postings')
+                field: job_key
+      - name: skill_key
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_skill')
+                field: skill_key
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - job_key
+              - skill_key

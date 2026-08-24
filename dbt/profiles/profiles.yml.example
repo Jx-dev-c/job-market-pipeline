@@ -1,0 +1,24 @@
+job_market:
+  target: dev
+  outputs:
+    # dev local: Postgres do docker-compose
+    dev:
+      type: postgres
+      host: postgres
+      port: 5432
+      user: job_market
+      password: job_market_local_pw
+      dbname: job_market
+      schema: job_market_staging
+      threads: 4
+
+    # produção: BigQuery (ver docs/setup_gcp.md)
+    prod:
+      type: bigquery
+      method: service-account
+      project: your-gcp-project-id
+      dataset: job_market_staging
+      location: US
+      keyfile: /opt/airflow/keys/sa-key.json
+      threads: 4
+      maximum_bytes_billed: 1000000000

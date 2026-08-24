@@ -1,0 +1,21 @@
+version: 2
+
+sources:
+  - name: raw_job_market
+    schema: raw_job_market
+    tables:
+      - name: raw_adzuna_jobs
+        loaded_at_field: "CAST(ingestion_date AS TIMESTAMP)"
+        freshness:
+          warn_after: { count: 30, period: hour }
+          error_after: { count: 48, period: hour }
+      - name: raw_arbeitnow_jobs
+        loaded_at_field: "CAST(ingestion_date AS TIMESTAMP)"
+        freshness:
+          warn_after: { count: 30, period: hour }
+          error_after: { count: 48, period: hour }
+      - name: raw_remoteok_jobs
+        loaded_at_field: "CAST(ingestion_date AS TIMESTAMP)"
+        freshness:
+          warn_after: { count: 30, period: hour }
+          error_after: { count: 48, period: hour }

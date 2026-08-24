@@ -1,0 +1,15 @@
+version: 2
+
+seeds:
+  - name: skills_keywords
+    columns:
+      - name: skill_name
+        tests:
+          - not_null
+          - unique
+      - name: keyword
+        tests:
+          - not_null
+      - name: category
+        tests:
+          - not_null
