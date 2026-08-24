@@ -1,0 +1,24 @@
+FROM apache/airflow:2.10.3-python3.11
+
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
+
+# dbt and the extraction deps go in their own venvs, not Airflow's site-packages.
+# Airflow pins specific versions of Jinja2/SQLAlchemy/click that both toolchains fight with.
+COPY requirements-dbt.txt /tmp/requirements-dbt.txt
+RUN python -m venv /opt/dbt-venv && \
+    /opt/dbt-venv/bin/pip install --no-cache-dir -r /tmp/requirements-dbt.txt
+
+COPY requirements-extract.txt /tmp/requirements-extract.txt
+RUN python -m venv /opt/extract-venv && \
+    /opt/extract-venv/bin/pip install --no-cache-dir -r /tmp/requirements-extract.txt
+
+# group-writable so the container still works under compose's `user: "${AIRFLOW_UID}:0"`
+# override, which can differ from the UID that ran this build.
+RUN chmod -R g=u /opt/dbt-venv /opt/extract-venv
+
+COPY extract/ /opt/airflow/extract
+COPY dbt/job_market /opt/airflow/dbt/job_market
+RUN chmod -R g=u /opt/airflow/extract /opt/airflow/dbt
+
+USER airflow

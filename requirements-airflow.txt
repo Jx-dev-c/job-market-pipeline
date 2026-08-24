@@ -1,0 +1,4 @@
+# Vazio de propósito. O DAG chama extract/ e dbt via BashOperator, cada um no seu
+# venv isolado (/opt/extract-venv, /opt/dbt-venv), então nenhum provider extra do
+# Airflow é necessário. Se um dia usar um operator nativo (ex. GCP), adicionar
+# apache-airflow-providers-google aqui.
