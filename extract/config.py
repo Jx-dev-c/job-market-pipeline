@@ -18,10 +18,20 @@ class Settings:
     bq_raw_dataset: str
     postgres_dsn: str | None
     raw_data_dir: Path
+    # AWS (S3 + Athena/Glue)
+    s3_raw_bucket: str | None
+    aws_region: str
+    athena_database: str
+    athena_workgroup: str
+    athena_s3_staging_dir: str
 
 
 def load_settings() -> Settings:
     load_dotenv()
+    s3_raw_bucket = os.getenv("S3_RAW_BUCKET") or None
+    athena_s3_staging_dir = os.getenv("ATHENA_S3_STAGING_DIR") or (
+        f"s3://{s3_raw_bucket}/athena-results/" if s3_raw_bucket else ""
+    )
     return Settings(
         adzuna_app_id=os.getenv("ADZUNA_APP_ID") or None,
         adzuna_app_key=os.getenv("ADZUNA_APP_KEY") or None,
@@ -32,4 +42,9 @@ def load_settings() -> Settings:
         bq_raw_dataset=os.getenv("BQ_RAW_DATASET", "raw_job_market"),
         postgres_dsn=os.getenv("POSTGRES_DSN") or None,
         raw_data_dir=Path(os.getenv("RAW_DATA_DIR", "/data/raw")),
+        s3_raw_bucket=s3_raw_bucket,
+        aws_region=os.getenv("AWS_DEFAULT_REGION", "us-east-2"),
+        athena_database=os.getenv("GLUE_RAW_DATABASE", "raw_job_market"),
+        athena_workgroup=os.getenv("ATHENA_WORKGROUP", "primary"),
+        athena_s3_staging_dir=athena_s3_staging_dir,
     )

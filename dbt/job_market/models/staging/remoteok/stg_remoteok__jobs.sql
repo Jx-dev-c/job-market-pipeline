@@ -11,10 +11,10 @@ select
     location_raw,
     description,
     url,
-    posted_at,
+    {{ parse_timestamp('posted_at') }} as posted_at,
     salary_min,
     salary_max,
     salary_currency,
     remote_flag_raw,
-    ingestion_date
+    cast(ingestion_date as date) as ingestion_date
 from source

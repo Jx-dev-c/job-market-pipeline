@@ -15,6 +15,10 @@ airflow.cfg
 airflow.db
 standalone_admin_password.txt
 
+# Metabase (driver .jar baixado localmente)
+metabase-plugins/*
+!metabase-plugins/.gitkeep
+
 # dbt
 dbt/job_market/target/
 dbt/job_market/dbt_packages/

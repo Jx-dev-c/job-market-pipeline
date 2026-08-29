@@ -19,6 +19,8 @@ seeds:
 
 models:
   job_market:
+    # Athena: tabelas Iceberg (Hive não aceita timestamp com microssegundos)
+    +table_type: "{{ 'iceberg' if target.type == 'athena' else 'hive' }}"
     staging:
       +materialized: view
       +schema: job_market_staging

@@ -1,10 +1,12 @@
 # Arquitetura
 
-Roda local: Postgres como warehouse, Airflow orquestrando, dbt transformando, Metabase
-no dashboard. O plano é migrar pra GCP (BigQuery + GCS + Looker Studio) quando o billing
-da nuvem for resolvido. A verificação de billing do GCP, mesmo pro trial, exige cartão
-com limite, e isso travou. O passo a passo da migração está em `docs/migrar_para_gcp.md`,
-e o código que fala com GCP (`load_to_gcs.py`, `load_gcs_to_bigquery.py`) já está pronto.
+Produção roda na AWS (S3 + Athena + Glue), dentro do free tier, em `us-east-2`. Dá pra
+rodar tudo local em Postgres + Metabase também (`--target dev`), o que é útil pra iterar
+rápido sem custo.
+
+Antes da AWS o plano era GCP (BigQuery + GCS + Looker Studio). Isso travou porque a
+verificação de billing do GCP, mesmo pro trial, exige cartão com limite. O código GCP
+continua no repo e funciona como `--target prod_gcp` (ver `docs/migrar_para_gcp.md`).
 
 ## Fluxo
 
@@ -14,19 +16,22 @@ APIs públicas (Adzuna, Arbeitnow, RemoteOK)
         v
 extract/  (Python: um módulo por fonte, BaseExtractor, retry/backoff, validação pydantic)
         |
-        v
-data/raw/<fonte>/dt=YYYY-MM-DD/<fonte>.jsonl      (bronze, arquivo local)
+        +--> data/raw/<fonte>/dt=YYYY-MM-DD/<fonte>.jsonl        (bronze local)
         |
         v
-Postgres  schema raw_job_market, tabelas raw_<fonte>_jobs
+S3  s3://<bucket>/raw/<fonte>/ingestion_date=YYYY-MM-DD/<fonte>.jsonl   (bronze na nuvem)
         |
         v
-dbt (staging -> intermediate -> marts)
+Glue Data Catalog   tabelas externas raw_<fonte>_jobs (partition projection em ingestion_date)
         |
         v
-Metabase
+Athena  <-- dbt (staging -> intermediate -> marts)
+        |       staging/int: views + 1 tabela Iceberg incremental (int_jobs_deduped)
+        |       marts: tabelas Iceberg
+        v
+Metabase (local, driver Athena)
 
-Airflow (LocalExecutor) orquestra: 3 extrações em paralelo -> dbt seed -> dbt build
+Airflow (local, LocalExecutor) orquestra: 3 extrações em paralelo -> dbt seed -> dbt build
 ```
 
 ## Camadas
@@ -35,31 +40,45 @@ Airflow (LocalExecutor) orquestra: 3 extrações em paralelo -> dbt seed -> dbt 
 - **Extração** (`extract/`): interface comum `BaseExtractor`, retry/backoff, validação
   do schema com pydantic no momento da extração, pra uma mudança de formato da API
   quebrar ali em vez de sujar o raw.
-- **Raw/bronze**: `data/raw/.../<fonte>.jsonl`. Nome sem timestamp, então re-rodar o
-  mesmo dia sobrescreve.
-- **Warehouse local** (Postgres): schema `raw_job_market`, tabelas `raw_<fonte>_jobs`.
-  Carga via `load_to_postgres.py`, DELETE + INSERT por partição numa transação.
-- **Transformação** (dbt, target `dev`=postgres): staging, intermediate, marts
-  (`core` e `analytics`). Os models não usam SQL nativo de um adapter, sempre uma macro
-  cross-database, pra não travar a migração pro BigQuery depois.
+- **Raw/bronze**: `data/raw/.../<fonte>.jsonl` local e `s3://<bucket>/raw/...`. Nome sem
+  timestamp, então re-rodar o mesmo dia sobrescreve.
+- **Catálogo** (Glue): `raw_job_market.raw_<fonte>_jobs`, tabelas externas JSON com
+  partition projection.
+- **Warehouse / transformação** (Athena + dbt, target `prod`): staging, intermediate,
+  marts (`core` e `analytics`). Os models não usam SQL nativo de um adapter, sempre uma
+  macro cross-database (`regexp_like`, `word_boundary_pattern`, `parse_timestamp`), o
+  que faz `--target dev` e `--target prod_gcp` rodarem sem editar model.
 - **Orquestração** (Airflow, Docker, LocalExecutor): DAG diário `job_market_daily`.
-- **Dashboard**: Metabase (Docker local).
+- **Dashboard**: Metabase (Docker local) com o driver community de Athena.
 
 ## Decisões
+
+**Athena e não Redshift.** Athena não tem custo ocioso: paga por dado escaneado (~$5/TB),
+e as runs escaneiam poucos MB. Redshift Serverless cobra capacidade-base por hora mesmo
+parado, o que consumiria o crédito à toa. `dbt-athena` é adapter mantido.
+
+**Partition projection e não Glue Crawler.** Crawler custa por DPU-hora e roda em
+schedule. Projection é config na tabela, custo zero, e a partição nova fica visível na
+hora que o arquivo chega no S3.
+
+**Iceberg em `int_jobs_deduped`, Hive não seria suficiente.** É o único model incremental
+de verdade e precisa de `merge`, que o Athena não faz em tabela Hive. Os outros models
+são view ou full-refresh, então acabaram todos em Iceberg por consistência (e porque o
+Athena Hive não aceita `timestamp` com microssegundos, que é o que o Iceberg produz).
 
 **Postgres local e não DuckDB.** O Airflow já precisa de um Postgres de metadata, então
 reaproveitar é mais simples que trazer um paradigma novo. `dbt-postgres` é adapter
 oficial.
 
-**Arquivo local como bronze, não MinIO.** `load_to_gcs.py` já fala a API do GCS. Um
-MinIO seria código descartável só pra simular S3.
-
 **LocalExecutor e não Celery.** Volume pequeno (3 fontes, 1x/dia) não justifica
 Celery/Redis.
 
 **Modelos incrementais desde o começo.** Full-refresh diário cresce o custo/tempo de
-processamento indefinidamente conforme o histórico acumula. Menos crítico no Postgres,
-mas mantém a convenção pro BigQuery.
+processamento indefinidamente conforme o histórico acumula.
 
-**Regex + CSV pra skills, não NLP.** Suficiente pro MVP e portável entre Postgres e
-BigQuery sem duplicar SQL.
+**Metabase e não QuickSight.** QuickSight cobra por author depois do trial. Metabase roda
+local sobre o Athena sem custo.
+
+**Regex + CSV pra skills, não NLP.** Suficiente pro MVP e portável entre Postgres, Athena
+e BigQuery sem duplicar SQL. Um caminho pra algo mais esperto fica em aberto se a
+precisão cair.

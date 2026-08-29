@@ -1,8 +1,14 @@
-{{ config(materialized='incremental', unique_key='job_key') }}
+{{ config(
+    materialized='incremental',
+    unique_key='job_key',
+    incremental_strategy=('merge' if target.type == 'athena' else 'delete+insert'),
+) }}
 
 -- Only truly incremental model in the project. It reads the growing unioned raw
 -- history; everything downstream reads this deduped, bounded table, so those can
 -- full-refresh cheaply.
+-- Strategy differs by target (Postgres: delete+insert; Athena: merge on an Iceberg
+-- table, see +table_type in dbt_project.yml). The SQL below is the same for both.
 
 with source as (
     select * from {{ ref('int_jobs_unioned') }}

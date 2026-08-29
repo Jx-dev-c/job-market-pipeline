@@ -1,7 +1,7 @@
 {#
   Case-insensitive regex match, one implementation per adapter. Models call this
-  instead of REGEXP_CONTAINS / ~* directly, so the same model runs on dev (postgres)
-  and prod (bigquery).
+  instead of REGEXP_CONTAINS / regexp_like / ~* directly so the same model runs on
+  dev (postgres), prod (athena) and prod_gcp (bigquery).
 #}
 
 {% macro regexp_like(column_expression, pattern) -%}
@@ -18,4 +18,8 @@
 
 {% macro bigquery__regexp_like(column_expression, pattern) %}
     REGEXP_CONTAINS({{ column_expression }}, {{ pattern }})
+{% endmacro %}
+
+{% macro athena__regexp_like(column_expression, pattern) %}
+    regexp_like({{ column_expression }}, '(?i)' || {{ pattern }})
 {% endmacro %}

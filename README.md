@@ -3,10 +3,14 @@
 Pipeline de dados ponta a ponta sobre o mercado de vagas de tecnologia. Projeto de
 portfólio pra Engenharia de Dados.
 
-**Status:** em construção. Roda local (Postgres + Airflow + dbt). Extração, carga,
-transformação e orquestração diária já rodam ponta a ponta. O plano é BigQuery + GCS +
-Looker Studio quando o billing da nuvem for resolvido, ver
-[`docs/migrar_para_gcp.md`](docs/migrar_para_gcp.md). Falta o dashboard.
+**Status:** em construção. Produção roda na AWS (S3 + Athena + Glue), dentro do free
+tier, em `us-east-2`. Extração, carga, transformação e orquestração diária já rodam
+ponta a ponta pelo Airflow. Dá pra rodar tudo local em Postgres também (`--target dev`),
+sem custo. Falta o dashboard (Metabase com driver Athena).
+
+Setup da AWS: [`docs/setup_aws.md`](docs/setup_aws.md).
+A versão GCP (BigQuery/GCS) ainda funciona como `--target prod_gcp`, ver
+[`docs/migrar_para_gcp.md`](docs/migrar_para_gcp.md).
 
 ## Por que este projeto
 
@@ -24,10 +28,11 @@ plataformas.
 ```
 APIs (Adzuna, Arbeitnow, RemoteOK)
   -> extract/ (Python, retry/backoff, validação com pydantic)
-  -> raw/bronze (arquivo local, particionado por data)
-  -> Postgres raw (particionado por ingestion_date)
+  -> S3 raw/bronze (particionado por ingestion_date)
+  -> Glue Data Catalog (tabelas externas, partition projection)
   -> Airflow (orquestração diária)
   -> dbt (staging -> intermediate -> marts)
+  -> Athena
   -> Metabase
 ```
 

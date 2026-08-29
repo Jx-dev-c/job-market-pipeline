@@ -1,6 +1,8 @@
 # dbt roda num venv isolado (/opt/dbt-venv) dentro da imagem do Airflow, separado do
 # site-packages do apache-airflow por conflito de dependências.
-# Os dois adapters coexistem; o profile decide qual usar (dev=postgres, prod=bigquery).
+# Os adapters coexistem; o profile decide qual usar:
+#   dev = postgres | prod = athena | prod_gcp = bigquery
 dbt-core>=1.8,<2
 dbt-postgres>=1.8,<2
+dbt-athena-community>=1.8,<2
 dbt-bigquery>=1.8,<2

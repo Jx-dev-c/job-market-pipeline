@@ -12,8 +12,20 @@ job_market:
       schema: job_market_staging
       threads: 4
 
-    # produção: BigQuery (ver docs/setup_gcp.md)
+    # produção: Athena + Glue + S3. Credenciais no .env (docs/setup_aws.md).
+    # troque SEU-BUCKET.
     prod:
+      type: athena
+      s3_staging_dir: "{{ env_var('ATHENA_S3_STAGING_DIR', 's3://SEU-BUCKET/athena-results/') }}"
+      s3_data_dir: "{{ env_var('ATHENA_S3_DATA_DIR', 's3://SEU-BUCKET/dbt/') }}"
+      region_name: "{{ env_var('AWS_DEFAULT_REGION', 'us-east-2') }}"
+      database: awsdatacatalog
+      schema: job_market_staging
+      work_group: primary
+      threads: 4
+
+    # GCP legado (docs/migrar_para_gcp.md)
+    prod_gcp:
       type: bigquery
       method: service-account
       project: your-gcp-project-id
