@@ -17,6 +17,9 @@ models:
       - dbt_utils.expression_is_true:
           arguments:
             expression: "salary_min <= salary_max"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "first_seen <= last_seen"
 
   - name: int_jobs_enriched
     columns:
