@@ -99,6 +99,17 @@ Metabase conecta no Postgres (`job_market`, schema `job_market_marts`). Os model
 são iguais em `dev` e `prod`, então o dashboard é o mesmo que rodaria sobre o Athena.
 Ver `docs/setup_aws.md` sobre por que não conecta direto no Athena.
 
+## Testes
+
+```bash
+pip install -r requirements-test.txt
+python -m pytest -q
+```
+
+`tests/` cobre a camada `extract/`: o `normalize()` de cada fonte, o dedupe e a
+validação do `BaseExtractor`, e o DDL do schema raw. Os models do dbt têm os testes
+deles no `_schema.yml`. Ambos rodam no CI (`.github/workflows/ci.yml`).
+
 ## Convenções
 
 - Python com type hints, `ruff format` e `ruff check`.
@@ -126,7 +137,8 @@ Ver `docs/setup_aws.md` sobre por que não conecta direto no Athena.
    `parse_timestamp` no `posted_at`).
 5. Incluir a staging nova em `int_jobs_unioned`.
 6. Adicionar a fonte a `SOURCES` no DAG.
-7. Documentar o viés geográfico da fonte no README.
+7. Teste do `normalize()` da fonte em `tests/test_extractors.py`.
+8. Documentar o viés geográfico da fonte no README.
 
 ## Segurança
 

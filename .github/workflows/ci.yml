@@ -17,6 +17,16 @@ jobs:
       - run: ruff check .
       - run: ruff format --check .
 
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements-test.txt
+      - run: python -m pytest -q
+
   dbt:
     runs-on: ubuntu-latest
     services:
