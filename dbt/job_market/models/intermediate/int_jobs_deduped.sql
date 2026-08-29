@@ -13,14 +13,18 @@
 with source as (
     select * from {{ ref('int_jobs_unioned') }}
     {% if is_incremental() %}
-    where ingestion_date > (select coalesce(max(last_seen), date '1900-01-01') from {{ this }})
+    -- >= e não >: reprocessar a mesma data precisa reler a partição inteira. Com >
+    -- estrito, um segundo load no mesmo dia (extração parcial por rate limit, re-run
+    -- manual) ficava invisível aqui. O merge por job_key torna o reprocesso seguro.
+    where ingestion_date >= (select coalesce(max(last_seen), date '1900-01-01') from {{ this }})
     {% endif %}
 ),
 
 ranked as (
     select
         *,
-        row_number() over (partition by job_key order by ingestion_date desc) as rn
+        row_number() over (partition by job_key order by ingestion_date desc) as rn,
+        min(ingestion_date) over (partition by job_key) as first_seen_batch
     from source
 ),
 
@@ -43,10 +47,13 @@ select
     l.salary_currency,
     l.remote_flag_raw,
     l.ingestion_date as last_seen,
+    -- first_seen vem do min da janela, não da linha rn=1 (que é a mais recente).
+    -- Usar l.ingestion_date aqui colapsava first_seen em last_seen a cada
+    -- full-refresh e quebrava o grão de mart_tendencia_diaria.
     {% if is_incremental() %}
-    coalesce(existing.first_seen, l.ingestion_date) as first_seen
+    coalesce(existing.first_seen, l.first_seen_batch) as first_seen
     {% else %}
-    l.ingestion_date as first_seen
+    l.first_seen_batch as first_seen
     {% endif %}
 from latest_per_run l
 {% if is_incremental() %}
