@@ -4,3 +4,9 @@ target-version = "py311"
 
 [tool.ruff.lint]
 extend-select = ["I"]
+
+[tool.pytest.ini_options]
+# Sem isso o pytest varre a raiz inteira e tenta coletar logs/ e dbt/**/target/.
+# No Windows a coleta quebra de vez: logs/scheduler/latest é um symlink criado pelo
+# Airflow dentro do container e o os.stat falha com WinError 1920.
+testpaths = ["tests"]
