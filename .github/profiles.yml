@@ -1,0 +1,14 @@
+# Profile só do CI (o profiles.yml de verdade é gitignored). Aponta pro Postgres
+# de serviço do GitHub Actions.
+job_market:
+  target: ci
+  outputs:
+    ci:
+      type: postgres
+      host: localhost
+      port: 5432
+      user: job_market
+      password: job_market
+      dbname: job_market
+      schema: job_market_staging
+      threads: 4

@@ -46,7 +46,9 @@ def main() -> int:
     )
     # GCP (legado, ver docs/migrar_para_gcp.md)
     parser.add_argument("--upload-gcs", action="store_true", help="Upload the partition file to GCS")
-    parser.add_argument("--load-bq", action="store_true", help="Load the GCS partition into BigQuery (implies --upload-gcs)")
+    parser.add_argument(
+        "--load-bq", action="store_true", help="Load the GCS partition into BigQuery (implies --upload-gcs)"
+    )
     # local
     parser.add_argument("--load-postgres", action="store_true", help="Load the partition into local Postgres")
     args = parser.parse_args()
@@ -65,9 +67,7 @@ def main() -> int:
         if not settings.s3_raw_bucket:
             logger.error("S3_RAW_BUCKET not set, cannot upload")
             return 1
-        s3_uri = upload_partition_to_s3(
-            local_path, args.source, run_date, settings.s3_raw_bucket, settings.aws_region
-        )
+        s3_uri = upload_partition_to_s3(local_path, args.source, run_date, settings.s3_raw_bucket, settings.aws_region)
         logger.info("uploaded to %s", s3_uri)
 
         if args.load_athena:

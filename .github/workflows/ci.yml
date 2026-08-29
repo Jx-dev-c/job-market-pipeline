@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ruff==0.6.9
+      - run: ruff check .
+      - run: ruff format --check .
+
+  dbt:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: job_market
+          POSTGRES_USER: job_market
+          POSTGRES_PASSWORD: job_market
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U job_market"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      POSTGRES_DSN: postgresql://job_market:job_market@localhost:5432/job_market
+      DBT_PROFILES_DIR: ${{ github.workspace }}/.github
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install "dbt-postgres>=1.8,<2" "psycopg[binary]>=3.1,<4"
+      # Cria as tabelas raw vazias para o dbt ter as sources, sem rodar a extração
+      # de verdade (que dependeria de APIs externas e de uma API key).
+      - run: python -m scripts.create_raw_tables
+      - run: dbt deps --project-dir dbt/job_market
+      - run: dbt build --project-dir dbt/job_market --target ci --full-refresh

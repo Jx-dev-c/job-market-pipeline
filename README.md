@@ -1,5 +1,7 @@
 # Job Market Data Pipeline
 
+[![CI](https://github.com/Jx-dev-c/job-market-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/Jx-dev-c/job-market-pipeline/actions/workflows/ci.yml)
+
 Pipeline de dados ponta a ponta sobre o mercado de vagas de tecnologia. Projeto de
 portfólio pra Engenharia de Dados.
 
