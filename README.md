@@ -38,6 +38,13 @@ APIs (Adzuna, Arbeitnow, RemoteOK)
 
 Detalhes e decisões em [`docs/architecture.md`](docs/architecture.md).
 
+## Dashboard
+
+![Dashboard no Metabase](docs/dashboard.png)
+
+Skills mais pedidas, remoto vs presencial, senioridade e volume por fonte. Roda no
+Metabase sobre os marts do dbt.
+
 ## Como rodar
 
 Setup, variáveis de ambiente e comandos em [`docs/desenvolvimento.md`](docs/desenvolvimento.md).
