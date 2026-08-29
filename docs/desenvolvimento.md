@@ -88,6 +88,17 @@ DAG `job_market_daily`: 3 extrações em paralelo, depois `dbt_seed` e `dbt_buil
 em ~3 min. `extract/`, `dbt/job_market/` e `dbt/profiles/` são volumes nos containers
 do Airflow, então editar o código reflete direto.
 
+## Dashboard
+
+```bash
+docker compose run --rm dbt build --target dev   # popula os marts no Postgres
+docker compose up -d metabase                    # http://localhost:3000
+```
+
+Metabase conecta no Postgres (`job_market`, schema `job_market_marts`). Os models do dbt
+são iguais em `dev` e `prod`, então o dashboard é o mesmo que rodaria sobre o Athena.
+Ver `docs/setup_aws.md` sobre por que não conecta direto no Athena.
+
 ## Convenções
 
 - Python com type hints, `ruff format` e `ruff check`.

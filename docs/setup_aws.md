@@ -106,16 +106,20 @@ docker compose run --rm dbt build --target prod
 Via Airflow: o DAG `job_market_daily` já usa `--upload-s3 --load-athena` e `--target prod`
 por padrão (controlado por `PIPELINE_EXTRACT_LOAD_FLAGS` / `PIPELINE_DBT_TARGET` no `.env`).
 
-## Dashboard: Metabase + Athena
+## Dashboard: Metabase
 
-1. Baixe o driver community: `metabase-athena-driver.jar` do repo
-   `starburstdata/metabase-driver` (releases) → coloque em `metabase-plugins/`.
-2. `docker compose up -d metabase` → `http://localhost:3000`.
-3. Admin → Databases → Add database → **Amazon Athena**:
-   - Region: `us-east-2`
-   - Access key / Secret key: as mesmas do `.env`
-   - S3 staging directory: `s3://<bucket>/athena-results/`
-   - (opcional) database: `job_market_marts`
+`docker compose up -d metabase`, depois `http://localhost:3000`.
+
+O Metabase aponta pro **Postgres local** (`job_market`, schema `job_market_marts`). Como
+os models do dbt são idênticos nos targets `dev` e `prod`, os marts são os mesmos que
+rodam no Athena. Rodar `dbt build --target dev` uma vez pra popular o Postgres.
+
+Conectar o Metabase direto no Athena não é prático hoje: o único driver community
+(`dacort/metabase-athena-driver`) parou em 2022 e não carrega em versões recentes do
+Metabase. O diretório `metabase-plugins/` está montado no container caso apareça um
+driver mantido, ou caso você fixe uma versão antiga do Metabase. A alternativa nativa
+AWS seria o QuickSight (conecta no Athena sem driver), mas cobra por author depois do
+trial.
 
 ## Custo esperado
 

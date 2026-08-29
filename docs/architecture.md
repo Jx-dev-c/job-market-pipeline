@@ -29,7 +29,7 @@ Athena  <-- dbt (staging -> intermediate -> marts)
         |       staging/int: views + 1 tabela Iceberg incremental (int_jobs_deduped)
         |       marts: tabelas Iceberg
         v
-Metabase (local, driver Athena)
+Metabase (local; lê os marts do Postgres, mesmos models via --target dev)
 
 Airflow (local, LocalExecutor) orquestra: 3 extrações em paralelo -> dbt seed -> dbt build
 ```
@@ -49,7 +49,9 @@ Airflow (local, LocalExecutor) orquestra: 3 extrações em paralelo -> dbt seed 
   macro cross-database (`regexp_like`, `word_boundary_pattern`, `parse_timestamp`), o
   que faz `--target dev` e `--target prod_gcp` rodarem sem editar model.
 - **Orquestração** (Airflow, Docker, LocalExecutor): DAG diário `job_market_daily`.
-- **Dashboard**: Metabase (Docker local) com o driver community de Athena.
+- **Dashboard**: Metabase (Docker local) sobre o Postgres. Não existe driver de Athena
+  mantido pro Metabase atual; como os marts são idênticos nos targets, o Postgres serve
+  de fonte pro dashboard sem perder nada. Detalhe em `docs/setup_aws.md`.
 
 ## Decisões
 
@@ -77,7 +79,8 @@ Celery/Redis.
 processamento indefinidamente conforme o histórico acumula.
 
 **Metabase e não QuickSight.** QuickSight cobra por author depois do trial. Metabase roda
-local sobre o Athena sem custo.
+local e de graça. Ele lê do Postgres em vez do Athena porque o driver community de Athena
+não acompanha as versões novas do Metabase, mas os marts são os mesmos.
 
 **Regex + CSV pra skills, não NLP.** Suficiente pro MVP e portável entre Postgres, Athena
 e BigQuery sem duplicar SQL. Um caminho pra algo mais esperto fica em aberto se a
