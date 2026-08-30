@@ -33,6 +33,12 @@ models:
           - accepted_values:
               arguments:
                 values: ["junior", "pleno", "senior", "staff", "nao_identificado"]
+      - name: seniority_source
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["titulo", "descricao", "nenhuma"]
       - name: work_mode
         tests:
           - not_null
