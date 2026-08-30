@@ -82,30 +82,4 @@ chamativo do gráfico é consequência de como "vaga de tecnologia" foi definido
 
 Setup, variáveis de ambiente e comandos em [`docs/desenvolvimento.md`](docs/desenvolvimento.md).
 
-## Limitações conhecidas
 
-- As fontes têm viés geográfico (Arbeitnow puxa pra Europa, RemoteOK pra remoto
-  EUA/Europa). A cobertura pro Brasil ainda precisa ser validada melhor.
-- O recorte de "vaga de tecnologia" é frágil: é casar com qualquer keyword do
-  `skills_keywords.csv`, que tem só 29 skills. Como `Excel` está na lista, vaga
-  administrativa entra. Dos 970 ingeridos, 264 passam; o resto (açougueiro, atendente de
-  farmácia) fica só na camada intermediate. Um critério melhor exigiria classificar a
-  vaga, não só procurar keyword.
-- A coluna `keyword` do CSV é regex, então uma skill cobre os próprios apelidos e as
-  tecnologias que a implicam: `SQL` casa com os bancos que falam SQL (não com MongoDB) e
-  `JavaScript` casa com `js`, e por tabela com `node.js`. É uma decisão de modelagem, não
-  um efeito colateral, mas vale saber que o número do SQL inclui quem só escreveu
-  "PostgreSQL". `TS` e `K8s` ainda não casam — não apareceram na amostra.
-- A Adzuna devolve descrição truncada (470 caracteres em média, 205 de 250 terminando em
-  reticências), então o texto que sobra raramente cita as tecnologias. Buscar por
-  `category=it-jobs` e casar skill no título junto com a descrição levou o aproveitamento
-  dela de 2,4% pra 9,2%, mas o teto continua baixo enquanto a fonte não der o texto
-  inteiro. Arbeitnow e RemoteOK não têm esse problema.
-- Arbeitnow e RemoteOK ainda são ingeridas sem filtro de categoria na origem, porque as
-  APIs delas não oferecem um. O recorte pra essas duas só acontece no mart, o que
-  significa gravar no S3 e escanear no Athena vaga que vai ser descartada depois.
-- Skill e senioridade saem de regex + um CSV de keywords, não de NLP. 27% das vagas nos
-  marts ficam sem senioridade identificável. A senioridade tenta o título primeiro e cai
-  pra descrição quando o título não resolve; a descrição acerta 87% das vezes em que
-  dispara, então `seniority_source` marca de onde veio o rótulo, pra quem quiser filtrar
-  só o sinal de título.
