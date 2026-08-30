@@ -1,11 +1,9 @@
--- first_seen tem que bater com a primeira vez que o job_key apareceu no histórico
--- bruto. Regressão: int_jobs_deduped pegava ingestion_date da linha rn=1 (a mais
--- recente), então todo full-refresh colapsava first_seen em last_seen e o grão de
--- mart_tendencia_diaria virava "última vez vista" em vez de "vaga nova".
---
--- Só falha quando first_seen é MAIOR que o mínimo real: se a partição raw for
--- expirada por lifecycle no S3, first_seen preservado pelo incremental fica menor
--- que o mínimo ainda visível, e isso não é erro.
+-- first_seen has to match the first time the job_key showed up in the raw history.
+-- Regression guard: int_jobs_deduped used to take ingestion_date from the rn=1 row (the
+-- most recent one), so every full-refresh collapsed first_seen into last_seen.
+-- Only fails when first_seen is greater than the real minimum. If an S3 lifecycle rule
+-- ever expires a raw partition, the incremental keeps a first_seen older than anything
+-- still visible, and that's fine.
 
 with primeira_ocorrencia as (
     select
