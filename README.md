@@ -86,8 +86,10 @@ Setup, variáveis de ambiente e comandos em [`docs/desenvolvimento.md`](docs/des
 - As fontes têm viés geográfico (Arbeitnow puxa pra Europa, RemoteOK pra remoto
   EUA/Europa). A cobertura pro Brasil ainda precisa ser validada melhor.
 - O recorte de "vaga de tecnologia" é frágil: é casar com qualquer keyword do
-  `skills_keywords.csv`, que hoje tem só 29 termos e nenhum apelido (`JS`, `PostgreSQL`
-  e afins não casam). Como `Excel` está na lista, vaga administrativa entra. Dos 969
+  `skills_keywords.csv`, que hoje tem 29 termos e trata apelido de forma inconsistente:
+  `postgres(ql)?` e `node\.js` cobrem as variantes, mas `JS`, `K8s` e `TS` não casam com
+  JavaScript, Kubernetes e TypeScript. Como `Excel` está na lista, vaga administrativa
+  entra. Dos 969
   ingeridos, 246 passam; o resto (açougueiro, atendente de farmácia) fica só na camada
   intermediate. Um critério melhor exigiria classificar a vaga, não só procurar keyword.
 - A ingestão não filtra por tecnologia na origem, ela traz tudo e o recorte acontece
