@@ -1,8 +1,8 @@
 skill_name,keyword,category
 Python,python,linguagem
-SQL,sql,linguagem
+SQL,(sql|postgres(ql)?|mysql|snowflake|bigquery),linguagem
 Java,java,linguagem
-JavaScript,javascript,linguagem
+JavaScript,(javascript|js),linguagem
 TypeScript,typescript,linguagem
 C++,c\+\+,linguagem
 Golang,golang,linguagem

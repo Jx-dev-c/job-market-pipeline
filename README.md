@@ -56,13 +56,13 @@ Metabase sobre os marts do dbt.
 ## O que os dados mostram
 
 Numa execução de 969 vagas ingeridas (Adzuna 249, Arbeitnow 620, RemoteOK 100), das
-quais 246 entram nos marts:
+quais 247 entram nos marts:
 
 - **Excel aparece na frente de Python** (85 vagas contra 73). O motivo é o critério de
   escopo: `Excel` está no `skills_keywords.csv`, então vaga administrativa que pede Excel
   entra no recorte de "tecnologia". Restringindo às vagas senior/staff, a ordem se
   inverte e Python passa Excel (41 contra 34).
-- Depois de Python e SQL (52), o bloco mais pedido é de infraestrutura: AWS (37),
+- Depois de Python (73) e SQL (69), o bloco mais pedido é de infraestrutura: AWS (37),
   Kubernetes (35) e Docker (29) aparecem à frente de linguagens como Java (24).
 - **Presencial e remoto empatam em 44%** (109 cada), com 11% híbrido. Vale ler junto com
   o viés das fontes: a RemoteOK é 100% remota por construção, então o presencial estaria
@@ -86,12 +86,15 @@ Setup, variáveis de ambiente e comandos em [`docs/desenvolvimento.md`](docs/des
 - As fontes têm viés geográfico (Arbeitnow puxa pra Europa, RemoteOK pra remoto
   EUA/Europa). A cobertura pro Brasil ainda precisa ser validada melhor.
 - O recorte de "vaga de tecnologia" é frágil: é casar com qualquer keyword do
-  `skills_keywords.csv`, que hoje tem 29 termos e trata apelido de forma inconsistente:
-  `postgres(ql)?` e `node\.js` cobrem as variantes, mas `JS`, `K8s` e `TS` não casam com
-  JavaScript, Kubernetes e TypeScript. Como `Excel` está na lista, vaga administrativa
-  entra. Dos 969
-  ingeridos, 246 passam; o resto (açougueiro, atendente de farmácia) fica só na camada
-  intermediate. Um critério melhor exigiria classificar a vaga, não só procurar keyword.
+  `skills_keywords.csv`, que tem só 29 skills. Como `Excel` está na lista, vaga
+  administrativa entra. Dos 969 ingeridos, 247 passam; o resto (açougueiro, atendente de
+  farmácia) fica só na camada intermediate. Um critério melhor exigiria classificar a
+  vaga, não só procurar keyword.
+- A coluna `keyword` do CSV é regex, então uma skill cobre os próprios apelidos e as
+  tecnologias que a implicam: `SQL` casa com os bancos que falam SQL (não com MongoDB) e
+  `JavaScript` casa com `js`, e por tabela com `node.js`. É uma decisão de modelagem, não
+  um efeito colateral, mas vale saber que o número do SQL inclui quem só escreveu
+  "PostgreSQL". `TS` e `K8s` ainda não casam — não apareceram na amostra.
 - A ingestão não filtra por tecnologia na origem, ela traz tudo e o recorte acontece
   depois, no mart. A Adzuna aceita termo de busca (`what=`) e hoje não usa, o que
   explica os 2,4% de aproveitamento dela. Filtrar na origem economizaria storage e scan
