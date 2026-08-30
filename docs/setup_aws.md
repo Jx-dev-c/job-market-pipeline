@@ -123,6 +123,8 @@ trial.
 
 ## Custo esperado
 
+Preços conferidos em agosto/2026, `us-east-2`.
+
 - **S3**: 5 GB grátis/12 meses; depois ~$0.023/GB. Projeto = poucos MB.
 - **Athena**: sem free tier, $5/TB escaneado. Runs diárias escaneiam MB → centavos/mês.
   Guarda-custo: no workgroup `primary` dá pra setar "per-query data usage limit" (ex: 1 GB).
