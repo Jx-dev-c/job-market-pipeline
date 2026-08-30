@@ -28,6 +28,35 @@ def test_adzuna_normalize_maps_nested_fields(tmp_path):
     assert job["remote_flag_raw"] is None
 
 
+def test_adzuna_sends_category_only_when_set(tmp_path):
+    enviados = {}
+
+    def fake_get(url, params=None, timeout=None):
+        enviados.update(params)
+
+        class R:
+            status_code = 200
+
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {"results": []}
+
+        return R()
+
+    com = AdzunaExtractor(tmp_path, app_id="x", app_key="y", category="it-jobs")
+    com.session.get = fake_get
+    com.fetch(None)
+    assert enviados["category"] == "it-jobs"
+
+    enviados.clear()
+    sem = AdzunaExtractor(tmp_path, app_id="x", app_key="y")
+    sem.session.get = fake_get
+    sem.fetch(None)
+    assert "category" not in enviados
+
+
 def test_adzuna_normalize_tolerates_missing_company_and_location(tmp_path):
     ex = AdzunaExtractor(tmp_path, app_id="x", app_key="y")
     (job,) = ex.normalize([{"id": 1, "title": "X", "redirect_url": "u"}])

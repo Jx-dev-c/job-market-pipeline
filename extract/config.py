@@ -12,6 +12,7 @@ class Settings:
     adzuna_app_id: str | None
     adzuna_app_key: str | None
     adzuna_country: str
+    adzuna_category: str | None
     jooble_api_key: str | None
     gcp_project_id: str | None
     gcs_raw_bucket: str | None
@@ -36,6 +37,9 @@ def load_settings() -> Settings:
         adzuna_app_id=os.getenv("ADZUNA_APP_ID") or None,
         adzuna_app_key=os.getenv("ADZUNA_APP_KEY") or None,
         adzuna_country=os.getenv("ADZUNA_COUNTRY", "br"),
+        # Sem categoria a busca varre o país inteiro (857k vagas no br) e só ~2% delas
+        # casam com alguma skill de tecnologia. Vazio desliga o filtro.
+        adzuna_category=os.getenv("ADZUNA_CATEGORY", "it-jobs") or None,
         jooble_api_key=os.getenv("JOOBLE_API_KEY") or None,
         gcp_project_id=os.getenv("GCP_PROJECT_ID") or None,
         gcs_raw_bucket=os.getenv("GCS_RAW_BUCKET") or None,

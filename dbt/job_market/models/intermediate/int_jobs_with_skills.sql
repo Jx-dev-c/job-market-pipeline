@@ -8,8 +8,14 @@
 -- matches js and, through it, node.js. skill_name is unique in the seed, so a job can
 -- never pick up the same skill twice even when several alternatives hit.
 
+-- Title and description together: Adzuna returns truncated snippets (470 chars on
+-- average, 205 of 250 ending in an ellipsis), so a posting called "Software Developer
+-- (Go | Java | Python)" carried none of its skills when only the description was read.
+-- Adds nothing for Arbeitnow and RemoteOK, whose descriptions come through whole.
 with jobs as (
-    select job_key, lower(coalesce(description, '')) as description_lower
+    select
+        job_key,
+        lower(coalesce(title, '') || ' ' || coalesce(description, '')) as haystack
     from {{ ref('int_jobs_deduped') }}
 ),
 
@@ -24,4 +30,4 @@ select
     skills.category
 from jobs
 inner join skills
-    on {{ regexp_like('jobs.description_lower', word_boundary_pattern('lower(skills.keyword)')) }}
+    on {{ regexp_like('jobs.haystack', word_boundary_pattern('lower(skills.keyword)')) }}
