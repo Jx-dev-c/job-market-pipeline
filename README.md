@@ -87,5 +87,3 @@ Setup, variáveis de ambiente e comandos em [`docs/desenvolvimento.md`](docs/des
   tecnologia. A senioridade tenta o título primeiro e cai pra descrição quando o título
   não resolve; a descrição acerta 87% das vezes em que dispara, então `seniority_source`
   marca de onde veio o rótulo, pra quem quiser filtrar só o sinal de título.
-- O screenshot do dashboard acima é anterior a essa mudança na senioridade, então a
-  distribuição que aparece nele está desatualizada.
