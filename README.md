@@ -55,5 +55,12 @@ Setup, variáveis de ambiente e comandos em [`docs/desenvolvimento.md`](docs/des
 
 - As fontes têm viés geográfico (Arbeitnow puxa pra Europa, RemoteOK pra remoto
   EUA/Europa). A cobertura pro Brasil ainda precisa ser validada melhor.
-- Skill e senioridade saem de regex + um CSV de keywords, não de NLP. Uns 68% das
-  vagas ficam sem senioridade identificável no título.
+- A maior parte do que entra não é vaga de tecnologia. Numa amostra de 969 vagas, só
+  246 (25%) casaram com alguma skill do `skills_keywords.csv`; o resto é açougueiro,
+  atendente de farmácia, auxiliar de produção. As fontes são boards generalistas e os
+  marts ainda não filtram por escopo, então os gráficos misturam os dois mundos.
+- Skill e senioridade saem de regex + um CSV de keywords, não de NLP. Na mesma amostra,
+  49% das vagas ficam sem senioridade identificável, ou 27% se olhar só as de
+  tecnologia. A senioridade tenta o título primeiro e cai pra descrição quando o título
+  não resolve; a descrição acerta 87% das vezes em que dispara, então `seniority_source`
+  marca de onde veio o rótulo pra dar pra filtrar só o sinal de título.

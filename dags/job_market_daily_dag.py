@@ -25,9 +25,8 @@ default_args = {
     "owner": "job-market-pipeline",
     "retries": 2,
     "retry_delay": timedelta(minutes=5),
-    # Dimensionado para as tasks de extração. As tasks de dbt sobrescrevem: o build
-    # cresce com o histórico e 10 min viraria um teto arbitrário conforme os dados
-    # acumulam.
+    # Dimensionado pras tasks de extração; as de dbt sobrescrevem, porque o build cresce
+    # com o histórico e 10 min viraria um teto arbitrário.
     "execution_timeout": timedelta(minutes=10),
 }
 
@@ -58,10 +57,9 @@ with DAG(
             )
         extract_groups.append(tg)
 
-    # Monitor, não portão: as sources têm warn_after/error_after em _sources.yml, mas
-    # nada invocava `dbt source freshness`, então a config nunca era exercida. Roda em
-    # paralelo ao build de propósito — uma fonte parada precisa acender a run em
-    # vermelho, não impedir os marts de atualizarem com o que chegou.
+    # O freshness das sources está configurado em _sources.yml mas nada invocava, então
+    # nunca era exercido. Roda em paralelo ao build de propósito: fonte parada precisa
+    # deixar a run vermelha, não impedir os marts de atualizarem com o que chegou.
     dbt_source_freshness = BashOperator(
         task_id="dbt_source_freshness",
         bash_command=f"{DBT_BIN} source freshness --project-dir {DBT_PROJECT_DIR} --target {DBT_TARGET}",
