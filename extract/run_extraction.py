@@ -27,6 +27,7 @@ def build_extractor(source: str, settings) -> BaseExtractor:
             app_id=settings.adzuna_app_id,
             app_key=settings.adzuna_app_key,
             country=settings.adzuna_country,
+            category=settings.adzuna_category,
         )
     if source == "arbeitnow":
         return ArbeitnowExtractor(settings.raw_data_dir)

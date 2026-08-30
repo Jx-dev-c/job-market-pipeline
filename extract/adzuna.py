@@ -13,28 +13,37 @@ MAX_PAGES = 5  # cap to respect the free-tier daily request quota
 class AdzunaExtractor(BaseExtractor):
     source_name = "adzuna"
 
-    def __init__(self, raw_dir, app_id: str | None, app_key: str | None, country: str = "br"):
+    def __init__(
+        self,
+        raw_dir,
+        app_id: str | None,
+        app_key: str | None,
+        country: str = "br",
+        category: str | None = None,
+    ):
         super().__init__(raw_dir)
         if not app_id or not app_key:
             raise ExtractionError("adzuna: ADZUNA_APP_ID/ADZUNA_APP_KEY not set")
         self.app_id = app_id
         self.app_key = app_key
         self.country = country
+        self.category = category
 
     def fetch(self, run_date: date) -> list[dict[str, Any]]:
         records: list[dict[str, Any]] = []
         for page in range(1, MAX_PAGES + 1):
             url = BASE_URL.format(country=self.country, page=page)
-            response = self.session.get(
-                url,
-                params={
-                    "app_id": self.app_id,
-                    "app_key": self.app_key,
-                    "results_per_page": RESULTS_PER_PAGE,
-                    "content-type": "application/json",
-                },
-                timeout=DEFAULT_TIMEOUT,
-            )
+            params = {
+                "app_id": self.app_id,
+                "app_key": self.app_key,
+                "results_per_page": RESULTS_PER_PAGE,
+                "content-type": "application/json",
+            }
+            # Sem category a busca é o país inteiro. Filtrar na origem evita gravar no S3
+            # (e escanear no Athena) vaga que o mart vai descartar depois.
+            if self.category:
+                params["category"] = self.category
+            response = self.session.get(url, params=params, timeout=DEFAULT_TIMEOUT)
             response.raise_for_status()
             page_results = response.json().get("results", [])
             if not page_results:
