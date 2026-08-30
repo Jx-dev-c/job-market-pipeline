@@ -4,9 +4,10 @@ import json
 from datetime import date
 
 import pytest
+import requests
 from pydantic import ValidationError
 
-from extract.base import BaseExtractor, ExtractionError, NormalizedJob, parse_iso_datetime
+from extract.base import BaseExtractor, ExtractionError, NormalizedJob, parse_iso_datetime, redact_secrets
 
 RUN_DATE = date(2026, 8, 20)
 
@@ -67,6 +68,30 @@ def test_run_raises_when_below_min_expected(tmp_path):
     ex.min_expected_records = 1
     with pytest.raises(ExtractionError):
         ex.run(RUN_DATE)
+
+
+def test_redact_secrets_hides_credentials_in_query_string():
+    url = "https://api.adzuna.com/v1/api/jobs/br/search/1?app_id=abc123&app_key=s3cret&results_per_page=50"
+    out = redact_secrets(url)
+    assert "abc123" not in out
+    assert "s3cret" not in out
+    assert "results_per_page=50" in out
+
+
+def test_run_does_not_leak_credentials_when_the_api_fails(tmp_path):
+    class Failing(FakeExtractor):
+        def fetch(self, run_date):
+            raise requests.exceptions.RetryError(
+                "too many 503 error responses for url: https://api.adzuna.com/search/1?app_key=s3cret"
+            )
+
+    ex = Failing(tmp_path, [])
+    with pytest.raises(ExtractionError) as caught:
+        ex.run(RUN_DATE)
+    assert "s3cret" not in str(caught.value)
+    # chain suppressed, otherwise the raw URL comes back via logger.exception
+    assert caught.value.__cause__ is None
+    assert caught.value.__suppress_context__
 
 
 def test_run_writes_partition_file(tmp_path):

@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 import json
 import logging
+import re
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -15,6 +16,14 @@ from urllib3.util.retry import Retry
 logger = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT = 15
+
+# Adzuna takes its credentials as query params, so requests puts them in the URL and
+# every requests exception repeats that URL in its message. Redact before logging.
+_SECRET_QUERY_PARAM = re.compile(r"([?&](?:app_id|app_key|api_key|key|token)=)[^&\s]+", re.IGNORECASE)
+
+
+def redact_secrets(text: str) -> str:
+    return _SECRET_QUERY_PARAM.sub(r"\1<redacted>", text)
 
 
 class ExtractionError(RuntimeError):
@@ -114,7 +123,12 @@ class BaseExtractor(abc.ABC):
         return out_path
 
     def run(self, run_date: date) -> Path:
-        raw = self.fetch(run_date)
+        try:
+            raw = self.fetch(run_date)
+        except requests.RequestException as exc:
+            # `from None` on purpose: chaining would put the original exception (URL and
+            # all) back in the traceback that run_extraction logs.
+            raise ExtractionError(f"{self.source_name}: request failed: {redact_secrets(str(exc))}") from None
         normalized = self.normalize(raw)
         validated = self._validate(normalized, run_date)
         if len(validated) < self.min_expected_records:
